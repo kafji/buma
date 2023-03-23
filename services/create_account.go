@@ -25,7 +25,7 @@ func CreateAccount(ctx context.Context, au AddUser, email, password string) erro
 	hashedPw := hash.HashPassword(password, salt)
 	ok := au.AddUser(ctx, email, hashedPw, salt)
 	if !ok {
-		return ErrNonUniqueEmail
+		return ErrAccountAlreadyExists
 	}
 
 	return nil

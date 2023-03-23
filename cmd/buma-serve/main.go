@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/app"
 	"kafji.net/buma/config"
 	"kafji.net/buma/server"
@@ -15,12 +15,15 @@ func main() {
 	cfg := config.ReadConfig()
 
 	db := app.Database(ctx, &cfg)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			slog.Error("error while closing database", err)
+			panic(err)
+		}
+	}()
 
-	log.Info().Msg("app: starting server app")
+	slog.Info("starting server app")
 
-	err := server.StartServer(cfg.Server.Port, db)
-	if err != nil {
-		log.Panic().Err(err).Msg("app: server error")
-	}
+	server.StartServer(cfg.Server.Port, db)
 }

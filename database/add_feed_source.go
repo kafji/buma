@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/lib/pq"
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 )
 
 func (s Database) AddFeedSource(ctx context.Context, userID int, sourceName, sourceURL string) (sourceID int, ok bool) {
@@ -20,13 +20,8 @@ func (s Database) AddFeedSource(ctx context.Context, userID int, sourceName, sou
 			}
 		}
 
-		log.Panic().
-			Str("tag", "database").
-			Err(err).
-			Int("user_id", userID).
-			Str("source_name", sourceName).
-			Str("source_url", sourceURL).
-			Msg("failed to add source")
+		slog.Error("failed to add user", userID, sourceName, sourceURL)
+		panic(err)
 	}
 
 	ok = true

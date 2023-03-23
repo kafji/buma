@@ -1,50 +1,40 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/rs/zerolog/log"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"kafji.net/buma/database"
 )
 
-func StartServer(port int, db database.Database) error {
-	r := echo.New()
+func SetupRouter(r *chi.Mux, db database.Database) {
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	r.HideBanner = true
-	r.HidePort = true
+	r.Use(withDB(db))
 
-	envf := NewEnvFactory(db)
-	SetupRouter(r, envf)
+	r.Post("/signup", createAccountHandler)
+	r.Post("/login", createTokenHandler)
 
-	addr := fmt.Sprintf(":%d", port)
-
-	routes, err := json.Marshal(r.Routes())
-	if err != nil {
-		log.Panic().Msg("server: failed to generate routes")
-	}
-
-	log.Info().Str("addr", addr).RawJSON("routes", routes).Msg("server: starting")
-
-	return r.Start(addr)
+	me := chi.NewRouter()
+	me.Use(authorization)
+	me.Post("/source", addSourceHandler)
+	me.Get("/sources", getSourcesHandler)
+	me.Get("/feed", getFeedHandler)
+	r.Mount("/me", me)
 }
 
-func SetupRouter(r *echo.Echo, envf func() Environment) {
-	r.Use(requestLogger())
-	r.Use(middleware.Recover())
-	r.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(120)))
-	r.Use(requestEnvironment(envf))
+func StartServer(port int, db database.Database) {
+	r := chi.NewRouter()
 
-	account := r.Group("/account")
-	account.POST("", createAccountHandler)
-	account.POST("/token", createTokenHandler)
+	SetupRouter(r, db)
 
-	user := r.Group("/user")
-	user.Use(authorization)
-	user.POST("/source", addSourceHandler)
-	user.GET("/sources", getSourcesHandler)
-	user.DELETE("/source/:id", deleteSourceHandler)
-	user.GET("/feed", getFeedHandler)
+	addr := fmt.Sprintf(":%d", port)
+	err := http.ListenAndServe(addr, r)
+	if err != nil {
+		log.Panic(err)
+	}
 }

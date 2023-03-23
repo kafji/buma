@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"kafji.net/buma/database"
 	"kafji.net/buma/services"
@@ -40,8 +40,9 @@ func TestServer(t *testing.T) {
 	ctx := context.Background()
 
 	database.WithDatabase(ctx, t, func(db database.Database) {
-		r := echo.New()
-		SetupRouter(r, NewEnvFactory(db))
+		r := chi.NewRouter()
+
+		SetupRouter(r, db)
 
 		createAccount(t, r)
 
@@ -65,7 +66,7 @@ func createAccount(t *testing.T, r http.Handler) {
 		testUser.email,
 		testUser.password,
 	})
-	req := httptest.NewRequest("POST", "/account", bytes.NewReader(body))
+	req := httptest.NewRequest("POST", "/signup", bytes.NewReader(body))
 	req.Header.Add("content-type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -82,7 +83,7 @@ func createAccessToken(t *testing.T, r http.Handler) string {
 		testUser.email,
 		testUser.password,
 	})
-	req := httptest.NewRequest("POST", "/account/token", bytes.NewReader(body))
+	req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
 	req.Header.Add("content-type", "application/json")
 
 	w := httptest.NewRecorder()
@@ -109,7 +110,7 @@ func addSource(t *testing.T, r http.Handler, token string) {
 		"Test Blog",
 		"http://example.com",
 	})
-	req := httptest.NewRequest("POST", "/user/source", bytes.NewReader(body))
+	req := httptest.NewRequest("POST", "/me/source", bytes.NewReader(body))
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -120,7 +121,7 @@ func addSource(t *testing.T, r http.Handler, token string) {
 }
 
 func getSources(t *testing.T, r http.Handler, token string) {
-	req := httptest.NewRequest("GET", "/user/sources", nil)
+	req := httptest.NewRequest("GET", "/me/sources", nil)
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", token))
 
@@ -146,7 +147,7 @@ func getSources(t *testing.T, r http.Handler, token string) {
 }
 
 func getFeed(t *testing.T, r http.Handler, token string) {
-	req := httptest.NewRequest("GET", "/user/feed", nil)
+	req := httptest.NewRequest("GET", "/me/feed", nil)
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", token))
 

@@ -1,43 +1,61 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
+	"github.com/go-chi/render"
 	"kafji.net/buma/services"
 )
 
 type createAccountRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    *string `json:"email"`
+	Password *string `json:"password"`
 }
 
-func createAccountHandler(c echo.Context) error {
-	ctx := c.Request().Context()
-	env := getEnv(c)
+func (s createAccountRequest) Bind(r *http.Request) error {
+	errs := []error{}
 
-	var req createAccountRequest
-	if err := c.Bind(&req); err != nil {
-		return err
+	if s.Email == nil {
+		errs = append(errs, errors.New("missing email"))
 	}
 
-	err := services.CreateAccount(ctx, env.getDB(), req.Email, req.Password)
+	if s.Password == nil {
+		errs = append(errs, errors.New("missing password"))
+	}
+
+	return errors.Join(errs...)
+}
+
+func createAccountHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req createAccountRequest
+	if err := render.Bind(r, &req); err != nil {
+		badRequest(w, r, nil)
+		return
+	}
+	email := *req.Email
+	password := *req.Password
+
+	err := services.CreateAccount(ctx, getDB(ctx), email, password)
 	if err != nil {
 		switch err {
 		case services.ErrEmptyEmail:
-			return echo.NewHTTPError(http.StatusBadRequest)
-
+			msg := "email must not be empty"
+			badRequest(w, r, &msg)
+			return
 		case services.ErrEmptyPassword:
-			return echo.NewHTTPError(http.StatusBadRequest)
-
-		case services.ErrNonUniqueEmail:
-			return echo.NewHTTPError(http.StatusConflict)
-
-		default:
-			log.Panic().Err(err).Msg("server: failed to create account")
+			msg := "password must not be empty"
+			badRequest(w, r, &msg)
+			return
+		case services.ErrAccountAlreadyExists:
+			msg := "account already exists"
+			badRequest(w, r, &msg)
+			return
 		}
+		panic(err)
 	}
 
-	return c.JSON(http.StatusOK, nil)
+	render.Status(r, http.StatusOK)
 }

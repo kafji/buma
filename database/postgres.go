@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/lib/pq"
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 )
 
 // https://www.postgresql.org/docs/current/errcodes-appendix.html
@@ -30,15 +30,17 @@ func PostgresConnect(ctx context.Context, cfg PostgresConfig) Database {
 		cfg.Host,
 		cfg.Port)
 
-	log.Info().Str("tag", "database").Str("dsn", dsn).Msg("connecting to postgres")
+	slog.Info("connecting to postgres", dsn)
 	conn, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Panic().Str("tag", "database").Err(err).Msg("failed to open connection to postgres")
+		slog.Error("failed to open connection to postgres", err)
+		panic(err)
 	}
 
 	err = conn.PingContext(ctx)
 	if err != nil {
-		log.Panic().Str("tag", "database").Err(err).Msg("failed to verify connection to postgres")
+		slog.Error("failed to verify connection to postgres", err)
+		panic(err)
 	}
 
 	return Database{conn}

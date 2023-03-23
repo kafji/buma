@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/mmcdole/gofeed"
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/services"
 )
 
@@ -12,7 +12,7 @@ func FetchFeeds(ctx context.Context, url string) []services.FetchedFeedItem {
 	parser := gofeed.NewParser()
 	feed, err := parser.ParseURLWithContext(url, ctx)
 	if err != nil {
-		log.Error().Str("tag", "feed").Err(err).Str("url", url).Msg("failed to fetch feed items")
+		slog.Error("failed to fetch feed items", err, url)
 		return nil
 	}
 

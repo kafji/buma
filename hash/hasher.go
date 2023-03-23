@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/rand"
 
-	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/argon2"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -20,7 +20,8 @@ func GenerateSalt() []byte {
 	salt := make([]byte, saltLength)
 	_, err := rand.Read(salt)
 	if err != nil {
-		log.Panic().Str("tag", "hasher").Err(err).Msg("failed to generate salt")
+		slog.Error("failed to generate salt")
+		panic(err)
 	}
 	return salt
 }

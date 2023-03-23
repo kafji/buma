@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/go-chi/render"
 	"kafji.net/buma/services"
 )
 
@@ -11,13 +11,13 @@ type getFeedResponse struct {
 	Feed services.UserFeed `json:"feed"`
 }
 
-func getFeedHandler(c echo.Context) error {
-	ctx := c.Request().Context()
+func getFeedHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	env := getEnv(c)
-
-	feed := services.GetFeed(ctx, env.getDB(), env.getUserID())
+	feed := services.GetFeed(ctx, getDB(ctx), getUserID(ctx))
 
 	res := getFeedResponse{feed}
-	return c.JSON(http.StatusOK, res)
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &res)
 }

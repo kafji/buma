@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/lib/pq"
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 )
 
 func (s Database) AddUser(ctx context.Context, email string, password []byte, salt []byte) bool {
@@ -18,10 +18,8 @@ func (s Database) AddUser(ctx context.Context, email string, password []byte, sa
 			}
 		}
 
-		log.Panic().
-			Str("tag", "database").
-			Err(err).
-			Msg("failed to add user")
+		slog.Error("failed to add user", err)
+		panic(err)
 	}
 
 	return true

@@ -3,14 +3,15 @@ package database
 import (
 	"context"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/services"
 )
 
 func (s Database) GetUserFeedSources(ctx context.Context, userID int) []services.UserFeedSource {
 	rows, err := s.conn.QueryContext(ctx, "SELECT name, url FROM feed_sources WHERE user_id = $1;", userID)
 	if err != nil {
-		log.Panic().Str("tag", "database").Err(err).Msg("failed to query user feed sources")
+		slog.Error("failed to query user feed sources", err)
+		panic(err)
 	}
 
 	ss := []services.UserFeedSource{}
@@ -19,7 +20,8 @@ func (s Database) GetUserFeedSources(ctx context.Context, userID int) []services
 		s := services.UserFeedSource{}
 		err := rows.Scan(&s.Name, &s.URL)
 		if err != nil {
-			log.Panic().Str("tag", "database").Err(err).Msg("failed to read query result")
+			slog.Error("failed to read query result", err)
+			panic(err)
 		}
 
 		ss = append(ss, s)

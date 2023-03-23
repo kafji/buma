@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 )
 
 type Config struct {
@@ -61,19 +61,21 @@ func FromEnv(key string) (cfg Config, err error) {
 }
 
 func ReadConfig() Config {
+	errs := []error{}
+
 	cfg, err := FromEnv("BUMA_CONFIG")
 	if err == nil {
 		return cfg
 	}
-
-	log.Info().Err(err).Msg("config: read config from env var fail, reading from local file")
+	errs = append(errs, err)
 
 	cfg, err = FromFile("./buma.toml")
 	if err == nil {
 		return cfg
 	}
+	errs = append(errs, err)
 
-	log.Panic().Err(err).Msg("config: read config from local file is also fail")
-
-	panic("unreachable")
+	err = errors.Join(errs...)
+	slog.Error("failed to read config", err)
+	panic(err)
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/app"
 	"kafji.net/buma/config"
 	"kafji.net/buma/feed"
@@ -18,7 +18,7 @@ func main() {
 	db := app.Database(ctx, &cfg)
 	defer db.Close()
 
-	log.Info().Msg("app: starting fetch app")
+	slog.Info("starting fetch app")
 
 	services.FetchFeeds(ctx, &db, services.FetchFeedFunc(feed.FetchFeeds), &db)
 }

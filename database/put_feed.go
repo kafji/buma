@@ -3,14 +3,15 @@ package database
 import (
 	"context"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/services"
 )
 
 func (s Database) PutFeed(ctx context.Context, items []services.StorableFeedItem) {
 	tx, err := s.conn.Begin()
 	if err != nil {
-		log.Panic().Err(err).Msg("database: failed to begin transaction")
+		slog.Error("database: failed to begin transaction", err)
+		panic(err)
 	}
 
 	q := "WITH source AS (SELECT id FROM feed_sources WHERE url = $1) " +
@@ -18,17 +19,14 @@ func (s Database) PutFeed(ctx context.Context, items []services.StorableFeedItem
 	for _, i := range items {
 		_, err := tx.ExecContext(ctx, q, i.SourceURL, i.URL, i.Title)
 		if err != nil {
-			log.Panic().
-				Str("source_url", i.SourceURL).
-				Str("url", i.URL).
-				Str("title", i.Title).
-				Err(err).
-				Msg("database: failed to insert feed item")
+			slog.Error("failed to insert feed item", err)
+			panic(err)
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Panic().Err(err).Msg("database: failed to commit transaction")
+		slog.Error("failed to commit transaction", err)
+		panic(err)
 	}
 }

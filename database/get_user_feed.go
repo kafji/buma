@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/services"
 )
 
@@ -14,10 +14,8 @@ func (s Database) GetUserFeed(ctx context.Context, userID int) services.UserFeed
 		"AND feed_sources.user_id = $1;"
 	rows, err := s.conn.QueryContext(ctx, q, userID)
 	if err != nil {
-		log.Panic().
-			Str("tag", "database").
-			Err(err).
-			Msg("failed to query feed")
+		slog.Error("failed to query user feed", err)
+		panic(err)
 	}
 	defer rows.Close()
 

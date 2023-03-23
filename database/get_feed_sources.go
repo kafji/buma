@@ -3,16 +3,14 @@ package database
 import (
 	"context"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 )
 
 func (s Database) GetFeedSources(ctx context.Context) []string {
 	rows, err := s.conn.QueryContext(ctx, "SELECT DISTINCT url FROM feed_sources;")
 	if err != nil {
-		log.Panic().
-			Str("tag", "database").
-			Err(err).
-			Msg("failed to query feed sources")
+		slog.Error("failed to query feed sources", err)
+		panic(err)
 	}
 	defer rows.Close()
 
@@ -23,10 +21,8 @@ func (s Database) GetFeedSources(ctx context.Context) []string {
 
 		err := rows.Scan(&url)
 		if err != nil {
-			log.Panic().
-				Str("tag", "database").
-				Err(err).
-				Msg("failed reading row")
+			slog.Error("failed reading row", err)
+			panic(err)
 		}
 
 		urls = append(urls, url)

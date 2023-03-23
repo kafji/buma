@@ -68,7 +68,7 @@ func TestAddSourceNonUniqueName(t *testing.T) {
 
 	_, err = AddSource(context.Background(), &afs, 1, "Test Source", "http://example.net")
 
-	assert.Equal(t, ErrNonUniqueSourceName, err)
+	assert.Equal(t, ErrSourceAlreadyExists, err)
 }
 
 func TestAddSourceEmptyName(t *testing.T) {

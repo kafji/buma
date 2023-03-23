@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 )
 
 func (s Database) GetUserByEmail(
@@ -18,9 +18,9 @@ func (s Database) GetUserByEmail(
 		if err == sql.ErrNoRows {
 			found = false
 			return
-		} else {
-			log.Panic().Str("tag", "database").Err(err).Str("email", email).Msg("failed to get user by email")
 		}
+		slog.Error("failed to get user by email", err, email)
+		panic(err)
 	}
 
 	found = true

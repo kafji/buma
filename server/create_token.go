@@ -1,50 +1,67 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
+	"github.com/go-chi/render"
 	"kafji.net/buma/services"
 )
 
-type createAccessTokenRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+type createTokenRequest struct {
+	Email    *string `json:"email"`
+	Password *string `json:"password"`
 }
 
-type createAccessTokenResponse struct {
+func (s createTokenRequest) Bind(r *http.Request) error {
+	errs := []error{}
+
+	if s.Email == nil {
+		errs = append(errs, errors.New("missing email"))
+	}
+
+	if s.Password == nil {
+		errs = append(errs, errors.New("missing password"))
+	}
+
+	return errors.Join(errs...)
+}
+
+type createTokenResponse struct {
 	Token string `json:"token"`
 }
 
-func createTokenHandler(c echo.Context) error {
-	ctx := c.Request().Context()
+func createTokenHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-	env := getEnv(c)
-
-	var req createAccessTokenRequest
-	if err := c.Bind(&req); err != nil {
-		return err
+	var req createTokenRequest
+	if err := render.Bind(r, &req); err != nil {
+		msg := err.Error()
+		badRequest(w, r, &msg)
+		return
 	}
+	email := *req.Email
+	password := *req.Password
 
-	token, ok, err := services.CreateToken(ctx, env.getDB(), env.getDB(), req.Email, req.Password)
+	token, ok, err := services.CreateToken(ctx, getDB(ctx), getDB(ctx), email, password)
 	if err != nil {
 		switch err {
 		case services.ErrEmptyEmail:
-			return echo.NewHTTPError(http.StatusBadRequest)
+			msg := "email must not be empty"
+			badRequest(w, r, &msg)
+			return
 		case services.ErrEmptyPassword:
-			return echo.NewHTTPError(http.StatusBadRequest)
-		default:
-			log.Panic().
-				Str("tag", "server").
-				Err(err).
-				Msg("create token error")
+			msg := "password must not be empty"
+			badRequest(w, r, &msg)
 		}
+		panic(err)
 	}
 	if !ok {
-		return echo.NewHTTPError(http.StatusNotFound)
+		notFound(w, r, nil)
+		return
 	}
 
-	res := createAccessTokenResponse{token}
-	return c.JSON(http.StatusOK, res)
+	res := createTokenResponse{token}
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &res)
 }

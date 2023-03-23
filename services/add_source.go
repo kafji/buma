@@ -25,7 +25,7 @@ func AddSource(
 
 	sourceID, ok := afs.AddFeedSource(ctx, userID, sourceName, sourceURL)
 	if !ok {
-		err = ErrNonUniqueSourceName
+		err = ErrSourceAlreadyExists
 		return
 	}
 

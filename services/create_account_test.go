@@ -49,7 +49,7 @@ func TestCreateAccountNonUniqueEmail(t *testing.T) {
 	assert.Nil(t, err)
 
 	err = CreateAccount(context.Background(), au, "test@example.com", "hunter2")
-	assert.Equal(t, ErrNonUniqueEmail, err)
+	assert.Equal(t, ErrAccountAlreadyExists, err)
 }
 
 func TestCreateAccountEmptyEmail(t *testing.T) {

@@ -1,37 +1,50 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog/log"
+	"github.com/go-chi/render"
 	"kafji.net/buma/services"
 )
 
-type addUserSourceRequest struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+type addSourceRequest struct {
+	Name *string `json:"name"`
+	URL  *string `json:"url"`
 }
 
-func addSourceHandler(c echo.Context) error {
-	ctx := c.Request().Context()
+func (s addSourceRequest) Bind(r *http.Request) error {
+	errs := []error{}
 
-	env := getEnv(c)
-
-	var req addUserSourceRequest
-	if err := c.Bind(&req); err != nil {
-		return err
+	if s.Name == nil {
+		errs = append(errs, errors.New("missing name"))
 	}
 
-	_, err := services.AddSource(ctx, env.getDB(), env.getUserID(), req.Name, req.URL)
+	if s.URL == nil {
+		errs = append(errs, errors.New("missing url"))
+	}
+
+	return errors.Join(errs...)
+}
+
+func addSourceHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req addSourceRequest
+	if err := render.Bind(r, &req); err != nil {
+		badRequest(w, r, nil)
+		return
+	}
+	name := *req.Name
+	url := *req.URL
+
+	_, err := services.AddSource(ctx, getDB(ctx), getUserID(ctx), name, url)
 	if err != nil {
 		switch err {
-		case services.ErrNonUniqueSourceName:
-			return echo.NewHTTPError(http.StatusBadRequest)
-		default:
-			log.Panic().Str("tag", "server").Err(err).Msg("add source error")
+		case services.ErrSourceAlreadyExists:
+			badRequest(w, r, nil)
+			return
 		}
+		panic(err)
 	}
-
-	return c.NoContent(http.StatusOK)
 }

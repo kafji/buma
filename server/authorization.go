@@ -4,33 +4,34 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/labstack/echo/v4"
 	"kafji.net/buma/services"
 )
 
-func authorization(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		ctx := c.Request().Context()
+func authorization(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 
-		env := getEnv(c)
-
-		header := c.Request().Header.Get("authorization")
+		header := r.Header.Get("authorization")
 		if header == "" {
-			return echo.NewHTTPError(http.StatusBadRequest)
+			msg := "missing authorization header"
+			badRequest(w, r, &msg)
+			return
 		}
 
 		token, ok := strings.CutPrefix(header, "Bearer ")
 		if !ok {
-			return echo.NewHTTPError(http.StatusBadRequest)
+			msg := "invalid authorization header format"
+			badRequest(w, r, &msg)
+			return
 		}
 
-		userID, ok := services.Authenticate(ctx, env.getDB(), token)
+		userID, ok := services.Authenticate(ctx, getDB(ctx), token)
 		if !ok {
-			return echo.NewHTTPError(http.StatusForbidden)
+			msg := "invalid credentials"
+			forbidden(w, r, &msg)
+			return
 		}
 
-		env.setUserID(userID)
-
-		return next(c)
-	}
+		withUserID(userID)(next).ServeHTTP(w, r)
+	})
 }

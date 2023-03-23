@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/rs/zerolog/log"
+	"golang.org/x/exp/slog"
 )
 
 func (s Database) GetUserIDByToken(ctx context.Context, token string) (userID int, found bool) {
@@ -18,9 +18,9 @@ func (s Database) GetUserIDByToken(ctx context.Context, token string) (userID in
 		if err == sql.ErrNoRows {
 			found = false
 			return
-		} else {
-			log.Panic().Str("tag", "tag").Err(err).Msg("failed to get user id by token")
 		}
+		slog.Error("failed to get user id by token", err)
+		panic(err)
 	}
 
 	found = true
