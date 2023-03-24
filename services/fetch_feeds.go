@@ -47,10 +47,10 @@ func FetchFeeds(ctx context.Context, gs GetFeedSources, ff FetchFeed, pf PutFeed
 
 	chunkSize := max(int(math.Ceil(float64(sslen)/float64(maxpar))), 1)
 
-	cs := []chan any{}
+	cs := []chan struct{}{}
 
 	for i := 0; i < sslen; i += chunkSize {
-		c := make(chan any)
+		c := make(chan struct{})
 		cs = append(cs, c)
 
 		i := i
@@ -58,7 +58,7 @@ func FetchFeeds(ctx context.Context, gs GetFeedSources, ff FetchFeed, pf PutFeed
 
 		go func() {
 			fetchFeeds(ctx, ff, pf, ss[i:j])
-			c <- nil
+			c <- struct{}{}
 		}()
 	}
 
