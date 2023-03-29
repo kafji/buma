@@ -1,11 +1,11 @@
-package server
+package httpserver
 
 import (
 	"errors"
 	"net/http"
 
 	"github.com/go-chi/render"
-	"kafji.net/buma/services"
+	addsource "kafji.net/buma/services/add_source"
 )
 
 type addSourceRequest struct {
@@ -38,10 +38,16 @@ func addSourceHandler(w http.ResponseWriter, r *http.Request) {
 	name := *req.Name
 	url := *req.URL
 
-	_, err := services.AddSource(ctx, getDB(ctx), getUserID(ctx), name, url)
+	_, err := addsource.AddSource(ctx, getDB(ctx), getUserID(ctx), name, url)
 	if err != nil {
 		switch err {
-		case services.ErrSourceAlreadyExists:
+		case addsource.ErrSourceAlreadyExists:
+			badRequest(w, r, nil)
+			return
+		case addsource.ErrEmptySourceName:
+			badRequest(w, r, nil)
+			return
+		case addsource.ErrEmptySourceURL:
 			badRequest(w, r, nil)
 			return
 		}

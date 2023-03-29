@@ -6,7 +6,7 @@ import (
 	"golang.org/x/exp/slog"
 	"kafji.net/buma/app"
 	"kafji.net/buma/config"
-	"kafji.net/buma/server"
+	"kafji.net/buma/httpserver"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 		}
 	}()
 
-	slog.Info("starting server app")
+	slog.Info("starting http server app")
 
-	server.StartServer(cfg.Server.Port, db)
+	httpserver.StartServer(cfg.HTTPServer.Port, db)
 }

@@ -1,10 +1,22 @@
-package services
+package createtoken
 
 import (
 	"context"
 
 	"github.com/google/uuid"
 	"kafji.net/buma/hash"
+)
+
+type CreateTokenError string
+
+func (s CreateTokenError) Error() string {
+	return string(s)
+}
+
+const (
+	ErrEmptyEmail    = CreateTokenError("email must not be empty")
+	ErrEmptyPassword = CreateTokenError("password must not be empty")
+	ErrUserNotFound  = CreateTokenError("user not found")
 )
 
 type GetUserByEmail interface {
@@ -21,7 +33,10 @@ func CreateToken(
 	at AddToken,
 	email,
 	password string,
-) (token string, ok bool, err error) {
+) (
+	token string,
+	err error,
+) {
 	if email == "" {
 		err = ErrEmptyEmail
 		return
@@ -34,12 +49,12 @@ func CreateToken(
 
 	userID, hashedPw, salt, found := gube.GetUserByEmail(ctx, email)
 	if !found {
-		ok = false
+		err = ErrUserNotFound
 		return
 	}
 
-	ok = hash.VerifyPassword(password, salt, hashedPw)
-	if !ok {
+	if ok := hash.VerifyPassword(password, salt, hashedPw); !ok {
+		err = ErrUserNotFound
 		return
 	}
 

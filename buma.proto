@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "kafji.net/buma/rpc";
+
+service AuthService {
+  rpc Signup(SignupRequest) returns (SignupResponse) {}
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+}
+
+message SignupRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message SignupResponse {}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}

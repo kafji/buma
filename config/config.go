@@ -10,8 +10,9 @@ import (
 )
 
 type Config struct {
-	Database Database `toml:"database"`
-	Server   Server   `toml:"server"`
+	Database   Database   `toml:"database"`
+	HTTPServer HTTPServer `toml:"http_server"`
+	GRPCServer GRPCServer `toml:"grpc_server"`
 }
 
 type Database struct {
@@ -22,7 +23,11 @@ type Database struct {
 	Port     int
 }
 
-type Server struct {
+type HTTPServer struct {
+	Port int
+}
+
+type GRPCServer struct {
 	Port int
 }
 

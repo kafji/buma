@@ -1,10 +1,10 @@
-package server
+package httpserver
 
 import (
 	"net/http"
 	"strings"
 
-	"kafji.net/buma/services"
+	"kafji.net/buma/services/authenticate"
 )
 
 func authorization(next http.Handler) http.Handler {
@@ -25,11 +25,10 @@ func authorization(next http.Handler) http.Handler {
 			return
 		}
 
-		userID, ok := services.Authenticate(ctx, getDB(ctx), token)
-		if !ok {
+		userID, err := authenticate.Authenticate(ctx, getDB(ctx), token)
+		if err != nil && err == authenticate.ErrInvalidToken {
 			msg := "invalid credentials"
 			forbidden(w, r, &msg)
-			return
 		}
 
 		withUserID(userID)(next).ServeHTTP(w, r)

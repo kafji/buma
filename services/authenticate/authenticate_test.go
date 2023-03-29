@@ -1,4 +1,4 @@
-package services
+package authenticate
 
 import (
 	"context"
@@ -29,16 +29,16 @@ func (s fakeGetUserIDByToken) GetUserIDByToken(ctx context.Context, token string
 func TestAuthenticate(t *testing.T) {
 	guibt := newFakeGetUserIDByToken("t0k3n")
 
-	userID, found := Authenticate(context.Background(), guibt, "t0k3n")
+	userID, err := Authenticate(context.Background(), guibt, "t0k3n")
 
-	assert.True(t, found)
+	assert.Nil(t, err)
 	assert.Equal(t, 1, userID)
 }
 
 func TestAuthenticateFail(t *testing.T) {
 	guibt := newFakeGetUserIDByToken()
 
-	_, found := Authenticate(context.Background(), guibt, "t0k3n")
+	_, err := Authenticate(context.Background(), guibt, "t0k3n")
 
-	assert.False(t, found)
+	assert.Equal(t, ErrInvalidToken, err)
 }

@@ -1,4 +1,4 @@
-package services
+package createtoken
 
 import (
 	"context"
@@ -74,14 +74,9 @@ func TestCreateToken(t *testing.T) {
 	})
 	at := newFakeAddToken()
 
-	token, ok, err := CreateToken(context.Background(), gube, &at, "test@example.com", "hunter2")
+	token, err := CreateToken(context.Background(), gube, &at, "test@example.com", "hunter2")
 
-	if !assert.Nil(t, err) {
-		return
-	}
-	if !assert.True(t, ok) {
-		return
-	}
+	assert.Nil(t, err)
 	assert.NotEmpty(t, token)
 }
 
@@ -94,31 +89,25 @@ func TestCreateTokenInvalidPassword(t *testing.T) {
 	})
 	at := newFakeAddToken()
 
-	_, ok, err := CreateToken(context.Background(), gube, &at, "test@example.com", "hunter3")
+	_, err := CreateToken(context.Background(), gube, &at, "test@example.com", "hunter3")
 
-	if !assert.Nil(t, err) {
-		return
-	}
-	assert.False(t, ok)
+	assert.Equal(t, ErrUserNotFound, err)
 }
 
 func TestCreateTokenAccountNotExist(t *testing.T) {
 	gube := newFakeGetUserByEmail()
 	at := newFakeAddToken()
 
-	_, ok, err := CreateToken(context.Background(), gube, &at, "test@example.com", "hunter2")
+	_, err := CreateToken(context.Background(), gube, &at, "test@example.com", "hunter2")
 
-	if !assert.Nil(t, err) {
-		return
-	}
-	assert.False(t, ok)
+	assert.Equal(t, ErrUserNotFound, err)
 }
 
 func TestCreateTokenEmptyEmail(t *testing.T) {
 	gube := newFakeGetUserByEmail()
 	at := newFakeAddToken()
 
-	_, _, err := CreateToken(context.Background(), gube, &at, "", "hunter2")
+	_, err := CreateToken(context.Background(), gube, &at, "", "hunter2")
 
 	assert.Equal(t, ErrEmptyEmail, err)
 }
@@ -127,7 +116,7 @@ func TestCreateTokenEmptyPassword(t *testing.T) {
 	gube := newFakeGetUserByEmail()
 	at := newFakeAddToken()
 
-	_, _, err := CreateToken(context.Background(), gube, &at, "test@example.com", "")
+	_, err := CreateToken(context.Background(), gube, &at, "test@example.com", "")
 
 	assert.Equal(t, ErrEmptyPassword, err)
 }

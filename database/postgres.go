@@ -30,16 +30,16 @@ func PostgresConnect(ctx context.Context, cfg PostgresConfig) Database {
 		cfg.Host,
 		cfg.Port)
 
-	slog.Info("connecting to postgres", dsn)
+	slog.Info("connecting to postgres", "dsn", dsn, "tag", "postgres")
 	conn, err := sql.Open("postgres", dsn)
 	if err != nil {
-		slog.Error("failed to open connection to postgres", err)
+		slog.Error("failed to open connection to postgres", "err", err, "tag", "postgres")
 		panic(err)
 	}
 
 	err = conn.PingContext(ctx)
 	if err != nil {
-		slog.Error("failed to verify connection to postgres", err)
+		slog.Error("failed to verify connection to postgres", "err", err, "tag", "postgres")
 		panic(err)
 	}
 

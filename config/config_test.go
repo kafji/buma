@@ -19,8 +19,11 @@ func TestFromFile(t *testing.T) {
 				Host:     "127.0.0.1",
 				Port:     5432,
 			},
-			Server: Server{
+			HTTPServer: HTTPServer{
 				Port: 3000,
+			},
+			GRPCServer: GRPCServer{
+				Port: 4000,
 			},
 		}, cfg)
 	}

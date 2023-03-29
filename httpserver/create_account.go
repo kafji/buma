@@ -1,19 +1,19 @@
-package server
+package httpserver
 
 import (
 	"errors"
 	"net/http"
 
 	"github.com/go-chi/render"
-	"kafji.net/buma/services"
+	createaccount "kafji.net/buma/services/create_account"
 )
 
-type createTokenRequest struct {
+type createAccountRequest struct {
 	Email    *string `json:"email"`
 	Password *string `json:"password"`
 }
 
-func (s createTokenRequest) Bind(r *http.Request) error {
+func (s createAccountRequest) Bind(r *http.Request) error {
 	errs := []error{}
 
 	if s.Email == nil {
@@ -27,41 +27,35 @@ func (s createTokenRequest) Bind(r *http.Request) error {
 	return errors.Join(errs...)
 }
 
-type createTokenResponse struct {
-	Token string `json:"token"`
-}
-
-func createTokenHandler(w http.ResponseWriter, r *http.Request) {
+func createAccountHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var req createTokenRequest
+	var req createAccountRequest
 	if err := render.Bind(r, &req); err != nil {
-		msg := err.Error()
-		badRequest(w, r, &msg)
+		badRequest(w, r, nil)
 		return
 	}
 	email := *req.Email
 	password := *req.Password
 
-	token, ok, err := services.CreateToken(ctx, getDB(ctx), getDB(ctx), email, password)
+	err := createaccount.CreateAccount(ctx, getDB(ctx), email, password)
 	if err != nil {
 		switch err {
-		case services.ErrEmptyEmail:
+		case createaccount.ErrEmptyEmail:
 			msg := "email must not be empty"
 			badRequest(w, r, &msg)
 			return
-		case services.ErrEmptyPassword:
+		case createaccount.ErrEmptyPassword:
 			msg := "password must not be empty"
 			badRequest(w, r, &msg)
+			return
+		case createaccount.ErrAccountAlreadyExists:
+			msg := "account already exists"
+			badRequest(w, r, &msg)
+			return
 		}
 		panic(err)
 	}
-	if !ok {
-		notFound(w, r, nil)
-		return
-	}
 
-	res := createTokenResponse{token}
 	render.Status(r, http.StatusOK)
-	render.JSON(w, r, &res)
 }

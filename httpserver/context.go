@@ -1,4 +1,4 @@
-package server
+package httpserver
 
 import (
 	"context"
@@ -10,10 +10,6 @@ import (
 
 type contextKey int
 
-func (s contextKey) String() string {
-	return ""
-}
-
 const (
 	dbCtxKey contextKey = iota
 	userIDCtxKey
@@ -22,7 +18,7 @@ const (
 func getVal[T any](ctx context.Context, key contextKey) T {
 	v, ok := ctx.Value(key).(T)
 	if !ok {
-		panic(fmt.Sprintf("missing %s from context", key.String()))
+		panic(fmt.Sprintf("missing %v from context", key))
 	}
 	return v
 }
