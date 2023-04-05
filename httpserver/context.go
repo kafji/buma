@@ -2,47 +2,32 @@ package httpserver
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
+	"github.com/kafji/quari"
+	"github.com/kafji/quari/httpserver/ctxval"
 	"kafji.net/buma/database"
 )
 
-type contextKey int
+type ctxKey int
 
 const (
-	dbCtxKey contextKey = iota
-	userIDCtxKey
+	dbKey ctxKey = iota
+	userIDKey
 )
 
-func getVal[T any](ctx context.Context, key contextKey) T {
-	v, ok := ctx.Value(key).(T)
-	if !ok {
-		panic(fmt.Sprintf("missing %v from context", key))
-	}
-	return v
-}
-
 func getDB(ctx context.Context) database.Database {
-	return getVal[database.Database](ctx, dbCtxKey)
+	return quari.MustValue[database.Database](ctx, dbKey)
 }
 
 func withDB(db database.Database) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), dbCtxKey, db)))
-		})
-	}
+	return ctxval.WithValue(dbKey, db)
 }
 
 func getUserID(ctx context.Context) int {
-	return getVal[int](ctx, userIDCtxKey)
+	return quari.MustValue[int](ctx, userIDKey)
 }
 
 func withUserID(userID int) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), userIDCtxKey, userID)))
-		})
-	}
+	return ctxval.WithValue(userIDKey, userID)
 }

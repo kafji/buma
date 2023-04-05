@@ -12,7 +12,6 @@ import (
 type Config struct {
 	Database   Database   `toml:"database"`
 	HTTPServer HTTPServer `toml:"http_server"`
-	GRPCServer GRPCServer `toml:"grpc_server"`
 }
 
 type Database struct {
@@ -27,11 +26,7 @@ type HTTPServer struct {
 	Port int
 }
 
-type GRPCServer struct {
-	Port int
-}
-
-func FromFile(path string) (cfg Config, err error) {
+func fromFile(path string) (cfg Config, err error) {
 	buf, err := os.ReadFile(path)
 	if err != nil {
 		return
@@ -45,7 +40,7 @@ func FromFile(path string) (cfg Config, err error) {
 	return
 }
 
-func FromEnv(key string) (cfg Config, err error) {
+func fromEnv(key string) (cfg Config, err error) {
 	b64 := os.Getenv(key)
 	if b64 == "" {
 		err = errors.New("config: variable is empty")
@@ -68,19 +63,19 @@ func FromEnv(key string) (cfg Config, err error) {
 func ReadConfig() Config {
 	errs := []error{}
 
-	cfg, err := FromEnv("BUMA_CONFIG")
+	cfg, err := fromEnv("BUMA_CONFIG")
 	if err == nil {
 		return cfg
 	}
 	errs = append(errs, err)
 
-	cfg, err = FromFile("./buma.toml")
+	cfg, err = fromFile("./buma.toml")
 	if err == nil {
 		return cfg
 	}
 	errs = append(errs, err)
 
 	err = errors.Join(errs...)
-	slog.Error("failed to read config", err)
+	slog.Error("failed to read config", "err", err)
 	panic(err)
 }

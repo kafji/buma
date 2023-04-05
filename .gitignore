@@ -1,5 +1,2 @@
 /buma.toml
-/buma-http
-/buma-grpc
-/buma-fetch
-/buma-cli
+/buma.sql

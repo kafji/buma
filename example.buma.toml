@@ -7,6 +7,3 @@ port = 5432
 
 [http_server]
 port = 3000
-
-[grpc_server]
-port = 4000

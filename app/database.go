@@ -16,8 +16,6 @@ func Database(ctx context.Context, cfg *config.Config) database.Database {
 		Port:     cfg.Database.Port,
 	}
 	db := database.PostgresConnect(ctx, c)
-
 	database.RunMigrations(ctx, db)
-
 	return db
 }

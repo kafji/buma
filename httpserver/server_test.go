@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"kafji.net/buma/database"
-	"kafji.net/buma/services"
+	fetchfeeds "kafji.net/buma/services/fetch_feeds"
 )
 
 var testUser = struct {
@@ -23,11 +23,11 @@ var testUser = struct {
 	"hunter2",
 }
 
-var feedFetcher = services.FetchFeedFunc(
-	func(ctx context.Context, url string) []services.FetchedFeedItem {
-		testFeedSources := map[string][]services.FetchedFeedItem{
+var feedFetcher = fetchfeeds.FetchFeedFunc(
+	func(ctx context.Context, url string) []fetchfeeds.FetchedFeedItem {
+		testFeedSources := map[string][]fetchfeeds.FetchedFeedItem{
 			"http://example.com": {
-				services.FetchedFeedItem{Title: "Test Article", URL: "http://example.com/articles/1"},
+				fetchfeeds.FetchedFeedItem{Title: "Test Article", URL: "http://example.com/articles/1"},
 			},
 		}
 		if xs, ok := testFeedSources[url]; ok {
@@ -41,8 +41,7 @@ func TestServer(t *testing.T) {
 
 	database.WithDatabase(ctx, t, func(db database.Database) {
 		r := chi.NewRouter()
-
-		SetupRouter(r, db)
+		setupRouter(r, db)
 
 		createAccount(t, r)
 
@@ -50,11 +49,11 @@ func TestServer(t *testing.T) {
 
 		addSource(t, r, token)
 
-		services.FetchFeeds(ctx, db, feedFetcher, db)
+		getUserSources(t, r, token)
 
-		getSources(t, r, token)
+		fetchfeeds.FetchFeeds(ctx, db, feedFetcher, db)
 
-		getFeed(t, r, token)
+		getUserFeed(t, r, token)
 	})
 }
 
@@ -95,10 +94,7 @@ func createAccessToken(t *testing.T, r http.Handler) string {
 		Token string `json:"token"`
 	}{}
 	err := json.Unmarshal(w.Body.Bytes(), &res)
-	if !assert.Nil(t, err, "createAccessToken: failed to read response body") {
-		t.Fail()
-	}
-
+	assert.Nil(t, err, "createAccessToken: failed to read response body")
 	return res.Token
 }
 
@@ -120,7 +116,7 @@ func addSource(t *testing.T, r http.Handler, token string) {
 	assert.Equal(t, http.StatusOK, w.Code, "addSource: received error response")
 }
 
-func getSources(t *testing.T, r http.Handler, token string) {
+func getUserSources(t *testing.T, r http.Handler, token string) {
 	req := httptest.NewRequest("GET", "/me/sources", nil)
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", token))
@@ -128,7 +124,7 @@ func getSources(t *testing.T, r http.Handler, token string) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code, "getSources: received error response")
+	assert.Equal(t, http.StatusOK, w.Code, "getUserSources: received error response")
 
 	res := struct {
 		Sources []struct {
@@ -137,16 +133,13 @@ func getSources(t *testing.T, r http.Handler, token string) {
 		} `json:"sources"`
 	}{}
 	err := json.Unmarshal(w.Body.Bytes(), &res)
-	if !assert.Nil(t, err, "getSources: failed to read response body") {
-		t.Fail()
-	}
-
+	assert.Nil(t, err, "getUserSources: failed to read response body")
 	assert.Equal(t, 1, len(res.Sources))
 	assert.Equal(t, "Test Blog", res.Sources[0].Name)
 	assert.Equal(t, "http://example.com", res.Sources[0].URL)
 }
 
-func getFeed(t *testing.T, r http.Handler, token string) {
+func getUserFeed(t *testing.T, r http.Handler, token string) {
 	req := httptest.NewRequest("GET", "/me/feed", nil)
 	req.Header.Add("content-type", "application/json")
 	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", token))
@@ -154,22 +147,17 @@ func getFeed(t *testing.T, r http.Handler, token string) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code, "getFeed: received error response")
+	assert.Equal(t, http.StatusOK, w.Code, "getUserFeed: received error response")
 
 	res := struct {
-		Feed struct {
-			Items []struct {
-				Title string `json:"title"`
-				URL   string `json:"url"`
-			} `json:"items"`
-		} `json:"feed"`
+		Items []struct {
+			Title string `json:"title"`
+			URL   string `json:"url"`
+		} `json:"items"`
 	}{}
 	err := json.Unmarshal(w.Body.Bytes(), &res)
-	if !assert.Nil(t, err, "getFeed: failed to read response body") {
-		t.Fail()
-	}
-
-	assert.Equal(t, 1, len(res.Feed.Items))
-	assert.Equal(t, "Test Article", res.Feed.Items[0].Title)
-	assert.Equal(t, "http://example.com/articles/1", res.Feed.Items[0].URL)
+	assert.Nil(t, err, "getUserFeed: failed to read response body")
+	assert.Equal(t, 1, len(res.Items), "getUserFeed: expecting one item")
+	assert.Equal(t, "Test Article", res.Items[0].Title)
+	assert.Equal(t, "http://example.com/articles/1", res.Items[0].URL)
 }

@@ -3,6 +3,7 @@ package createaccount
 import (
 	"context"
 
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/hash"
 )
 
@@ -13,9 +14,9 @@ func (s CreateAccountError) Error() string {
 }
 
 const (
-	ErrEmptyEmail           = CreateAccountError("account with the specified email already exist")
-	ErrEmptyPassword        = CreateAccountError("email must not be empty")
-	ErrAccountAlreadyExists = CreateAccountError("password must not be empty")
+	ErrEmptyEmail           = CreateAccountError("email must not be empty")
+	ErrEmptyPassword        = CreateAccountError("password must not be empty")
+	ErrAccountAlreadyExists = CreateAccountError("account with the specified email already exist")
 )
 
 type AddUser interface {
@@ -41,6 +42,8 @@ func CreateAccount(ctx context.Context, au AddUser, email, password string) erro
 	if !ok {
 		return ErrAccountAlreadyExists
 	}
+
+	slog.Info("user account created", "email", email)
 
 	return nil
 }

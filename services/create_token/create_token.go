@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"golang.org/x/exp/slog"
 	"kafji.net/buma/hash"
 )
 
@@ -60,6 +61,8 @@ func CreateToken(
 
 	token = uuid.New().String()
 	at.AddToken(ctx, userID, token)
+
+	slog.Info("token created", "email", email)
 
 	return
 }

@@ -1,12 +1,15 @@
-package services
+package fetchfeeds
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"runtime"
+
+	"golang.org/x/exp/slog"
 )
 
-type GetFeedSources interface {
+type QueryFeedSources interface {
 	GetFeedSources(ctx context.Context) []string
 }
 
@@ -28,36 +31,42 @@ type StorableFeedItem struct {
 	SourceURL string
 }
 
-func fetchFeeds(ctx context.Context, ff FetchFeed, pfi PutFeed, urls []string) {
+func fetchFeeds(ctx context.Context, ff FetchFeed, pf PutFeed, urls []string) {
 	for _, url := range urls {
 		fetched := ff.FetchFeed(ctx, url)
 
-		items := []StorableFeedItem{}
+		items := make([]StorableFeedItem, 0, len(fetched))
 		for _, item := range fetched {
 			items = append(items, StorableFeedItem{FetchedFeedItem: item, SourceURL: url})
 		}
-		pfi.PutFeed(ctx, items)
+
+		slog.Info(fmt.Sprintf("fetched %d items", len(items)), "url", url)
+
+		pf.PutFeed(ctx, items)
 	}
 }
 
-func FetchFeeds(ctx context.Context, gs GetFeedSources, ff FetchFeed, pf PutFeed) {
-	ss := gs.GetFeedSources(ctx)
-	sslen := len(ss)
-	maxpar := runtime.GOMAXPROCS(0)
+func FetchFeeds(ctx context.Context, qfs QueryFeedSources, ff FetchFeed, pf PutFeed) {
+	srcs := qfs.GetFeedSources(ctx)
 
-	chunkSize := max(int(math.Ceil(float64(sslen)/float64(maxpar))), 1)
+	slog.Info(fmt.Sprintf("fetching feeds from %d sources", len(srcs)))
+
+	srcsLen := len(srcs)
+	maxPar := runtime.GOMAXPROCS(0)
+
+	chunkSize := max(int(math.Ceil(float64(srcsLen)/float64(maxPar))), 1)
 
 	cs := []chan struct{}{}
 
-	for i := 0; i < sslen; i += chunkSize {
+	for i := 0; i < srcsLen; i += chunkSize {
 		c := make(chan struct{})
 		cs = append(cs, c)
 
 		i := i
-		j := min(i+chunkSize, sslen)
+		j := min(i+chunkSize, srcsLen)
 
 		go func() {
-			fetchFeeds(ctx, ff, pf, ss[i:j])
+			fetchFeeds(ctx, ff, pf, srcs[i:j])
 			c <- struct{}{}
 		}()
 	}

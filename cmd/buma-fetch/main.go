@@ -7,7 +7,7 @@ import (
 	"kafji.net/buma/app"
 	"kafji.net/buma/config"
 	"kafji.net/buma/feed"
-	"kafji.net/buma/services"
+	fetchfeeds "kafji.net/buma/services/fetch_feeds"
 )
 
 func main() {
@@ -20,5 +20,5 @@ func main() {
 
 	slog.Info("starting fetch app")
 
-	services.FetchFeeds(ctx, &db, services.FetchFeedFunc(feed.FetchFeeds), &db)
+	fetchfeeds.FetchFeeds(ctx, &db, fetchfeeds.FetchFeedFunc(feed.FetchFeeds), &db)
 }

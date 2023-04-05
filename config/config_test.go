@@ -8,7 +8,7 @@ import (
 
 func TestFromFile(t *testing.T) {
 	path := "../example.buma.toml"
-	cfg, err := FromFile(path)
+	cfg, err := fromFile(path)
 
 	if assert.Nil(t, err) {
 		assert.Equal(t, Config{
@@ -21,9 +21,6 @@ func TestFromFile(t *testing.T) {
 			},
 			HTTPServer: HTTPServer{
 				Port: 3000,
-			},
-			GRPCServer: GRPCServer{
-				Port: 4000,
 			},
 		}, cfg)
 	}

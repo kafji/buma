@@ -4,20 +4,20 @@ import (
 	"context"
 
 	"golang.org/x/exp/slog"
-	"kafji.net/buma/services"
+	"kafji.net/buma/models"
 )
 
-func (s Database) GetUserFeedSources(ctx context.Context, userID int) []services.UserFeedSource {
+func (s Database) QueryUserSources(ctx context.Context, userID int) []models.UserSource {
 	rows, err := s.conn.QueryContext(ctx, "SELECT name, url FROM feed_sources WHERE user_id = $1;", userID)
 	if err != nil {
 		slog.Error("failed to query user feed sources", err)
 		panic(err)
 	}
 
-	ss := []services.UserFeedSource{}
+	ss := []models.UserSource{}
 
 	for rows.Next() {
-		s := services.UserFeedSource{}
+		s := models.UserSource{}
 		err := rows.Scan(&s.Name, &s.URL)
 		if err != nil {
 			slog.Error("failed to read query result", err)
