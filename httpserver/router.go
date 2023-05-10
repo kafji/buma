@@ -3,12 +3,11 @@ package httpserver
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/kafji/quari/httpserver/logger"
 	"kafji.net/buma/database"
 )
 
 func setupRouter(r *chi.Mux, db database.Database) {
-	r.Use(middleware.RequestLogger(logger.NewSlogFormatter()))
+	r.Use(middleware.RequestLogger(newSlogFormatter()))
 	r.Use(middleware.Recoverer)
 
 	r.Use(withDB(db))

@@ -7,7 +7,6 @@ require (
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/render v1.0.2
 	github.com/google/uuid v1.3.0
-	github.com/kafji/quari v0.0.0-20230403134344-36c18721e1a3
 	github.com/lib/pq v1.10.7
 	github.com/mmcdole/gofeed v1.2.1
 	github.com/stretchr/testify v1.8.2
